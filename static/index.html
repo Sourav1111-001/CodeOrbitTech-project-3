@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionLens AI — Neural Vision & Classification Studio</title>
+    <meta name="description" content="Production-grade real-time deep learning image classification and Grad-CAM Explainable AI studio powered by PyTorch and Vision Transformers.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Background Glow Blobs -->
+    <div class="glow-bg glow-1"></div>
+    <div class="glow-bg glow-2"></div>
+    <div class="glow-bg glow-3"></div>
+
+    <div class="app-container">
+        <!-- Navigation Header -->
+        <header class="main-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-eye"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>VisionLens <span class="badge-ai">AI 2.0</span></h1>
+                    <p class="subtitle">Deep Learning Image Classifier & Explainable XAI Studio</p>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <!-- Model Selection Dropdown -->
+                <div class="model-select-wrapper">
+                    <label for="modelSelect"><i class="fa-solid fa-microchip"></i> Model Engine:</label>
+                    <select id="modelSelect" class="custom-select">
+                        <option value="mobilenet_v2" selected>MobileNetV2 (Edge Optimized, Fast)</option>
+                        <option value="resnet18">ResNet-18 (Residual 18-Layer)</option>
+                        <option value="resnet50">ResNet-50 (Deep Benchmark)</option>
+                        <option value="efficientnet_b0">EfficientNet-B0 (Compound Scaled)</option>
+                    </select>
+                </div>
+
+                <!-- Live System Telemetry -->
+                <div class="system-status-pill" id="systemStatus">
+                    <span class="status-dot online"></span>
+                    <span id="deviceText"><i class="fa-solid fa-bolt"></i> PyTorch CPU</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="tab-single" id="btnTabSingle">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Image & URL Inspector
+            </button>
+            <button class="tab-btn" data-tab="tab-webcam" id="btnTabWebcam">
+                <i class="fa-solid fa-video"></i> Live Webcam Scanner
+            </button>
+            <button class="tab-btn" data-tab="tab-batch" id="btnTabBatch">
+                <i class="fa-solid fa-layer-group"></i> Batch Inference
+            </button>
+            <button class="tab-btn" data-tab="tab-how-it-works" id="btnTabHowItWorks">
+                <i class="fa-solid fa-brain"></i> How Pretrained CNNs Work
+            </button>
+        </nav>
+
+        <!-- Main Workspace Area -->
+        <main class="main-workspace">
+            
+            <!-- TAB 1: Single & URL Inspector -->
+            <section id="tab-single" class="tab-pane active">
+                <div class="workspace-grid">
+                    
+                    <!-- Left Input Column -->
+                    <div class="input-panel glass-card">
+                        <div class="panel-header">
+                            <h3><i class="fa-solid fa-image"></i> Select Input Image</h3>
+                            <span class="tag-pill">ImageNet (1,000 Classes)</span>
+                        </div>
+
+                        <!-- Drop Zone -->
+                        <div class="drop-zone" id="dropZone">
+                            <input type="file" id="fileInput" accept="image/*" class="file-input-hidden">
+                            <div class="drop-zone-content">
+                                <div class="upload-icon">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                </div>
+                                <h4>Drag & drop image here</h4>
+                                <p>or <button type="button" class="btn-browse" id="btnBrowse">Browse Files</button></p>
+                                <span class="file-support-text">Supports JPG, PNG, WEBP up to 25MB</span>
+                            </div>
+                        </div>
+
+                        <!-- URL Input Option -->
+                        <div class="url-input-container">
+                            <div class="divider"><span>OR PASTE IMAGE URL</span></div>
+                            <div class="url-input-group">
+                                <input type="url" id="imageUrlInput" placeholder="https://example.com/photo.jpg" class="custom-input">
+                                <button id="btnFetchUrl" class="btn-secondary"><i class="fa-solid fa-magnifying-glass"></i> Classify</button>
+                            </div>
+                        </div>
+
+                        <!-- Instant Sample Gallery -->
+                        <div class="samples-section">
+                            <div class="samples-header">
+                                <h4><i class="fa-solid fa-wand-magic-sparkles"></i> 1-Click Test Samples</h4>
+                                <span class="hint-text">Click any sample to test immediately</span>
+                            </div>
+                            <div class="sample-chips" id="sampleChips">
+                                <!-- Dynamic sample chips populated by JS -->
+                                <div class="sample-skeleton">Loading samples...</div>
+                            </div>
+                        </div>
+
+                        <!-- Options Checklist -->
+                        <div class="inference-options">
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chkGradCAM" checked>
+                                <span class="checkmark"></span>
+                                <span class="label-text">Generate Grad-CAM Attention Heatmap (XAI)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Right Output Results Column -->
+                    <div class="output-panel glass-card" id="outputPanel">
+                        
+                        <!-- Placeholder State (Before inference) -->
+                        <div class="empty-state" id="emptyState">
+                            <div class="radar-scan">
+                                <i class="fa-solid fa-microchip pulse-icon"></i>
+                            </div>
+                            <h3>Awaiting Image Input</h3>
+                            <p>Upload a file, capture from camera, or click a test sample to view real-time deep learning classifications.</p>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="loading-state hidden" id="loadingState">
+                            <div class="cyber-spinner"></div>
+                            <h4 id="loadingText">Running Convolutional Forward Pass...</h4>
+                            <p class="sub-loading">Computing Softmax & Class Activation Maps</p>
+                        </div>
+
+                        <!-- Active Results State -->
+                        <div class="results-content hidden" id="resultsContent">
+                            
+                            <!-- Top Card: Prediction Hero -->
+                            <div class="top-prediction-card">
+                                <div class="card-left">
+                                    <span class="prediction-badge"><i class="fa-solid fa-award"></i> Top Prediction</span>
+                                    <h2 id="topPredictedLabel">Golden Retriever</h2>
+                                    <div class="meta-row">
+                                        <span class="meta-item"><i class="fa-solid fa-gauge-high"></i> Latency: <strong id="latencyVal">28.4 ms</strong></span>
+                                        <span class="meta-item"><i class="fa-solid fa-cube"></i> Model: <strong id="modelUsedName">MobileNetV2</strong></span>
+                                        <span class="meta-item"><i class="fa-solid fa-expand"></i> Size: <strong id="imgDimensions">224x224</strong></span>
+                                    </div>
+                                </div>
+                                <div class="card-right">
+                                    <div class="confidence-circle" id="confidenceCircle">
+                                        <span class="conf-num" id="topConfidenceNum">94.8%</span>
+                                        <span class="conf-lbl">Confidence</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Image & Grad-CAM Visualizer -->
+                            <div class="visualizer-grid">
+                                <div class="viz-box">
+                                    <div class="viz-header">
+                                        <h5><i class="fa-solid fa-image"></i> Input Image</h5>
+                                    </div>
+                                    <div class="img-wrapper">
+                                        <img id="imgOriginalPreview" src="" alt="Input Preview">
+                                    </div>
+                                </div>
+
+                                <div class="viz-box" id="gradCamBox">
+                                    <div class="viz-header">
+                                        <h5><i class="fa-solid fa-fire-flame-curved"></i> Grad-CAM Attention Heatmap</h5>
+                                        <span class="xai-badge">Explainable AI</span>
+                                    </div>
+                                    <div class="img-wrapper heatmap-wrapper">
+                                        <img id="imgHeatmapPreview" src="" alt="Grad-CAM Heatmap">
+                                        <div class="heatmap-legend">
+                                            <span>Cold (Low Attention)</span>
+                                            <div class="legend-bar"></div>
+                                            <span>Hot (High Attention)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Top-5 Probability Distribution Chart -->
+                            <div class="chart-section">
+                                <div class="chart-header">
+                                    <h4><i class="fa-solid fa-chart-column"></i> Top-5 Class Probability Distribution</h4>
+                                    <button class="btn-tiny" id="btnCopyJson"><i class="fa-solid fa-code"></i> Copy JSON</button>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="probChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Table Breakdown -->
+                            <div class="table-section">
+                                <table class="custom-table" id="resultsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Predicted Category</th>
+                                            <th>Class ID</th>
+                                            <th>Probability</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resultsTableBody">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- TAB 2: Live AI Webcam Scanner -->
+            <section id="tab-webcam" class="tab-pane">
+                <div class="webcam-layout glass-card">
+                    <div class="webcam-viewport-area">
+                        <div class="video-container" id="videoContainer">
+                            <video id="webcamVideo" autoplay playsinline muted></video>
+                            <canvas id="captureCanvas" class="hidden"></canvas>
+                            
+                            <!-- Sci-Fi HUD Overlay -->
+                            <div class="hud-overlay" id="hudOverlay">
+                                <div class="hud-reticle"></div>
+                                <div class="hud-scanner-line"></div>
+                                <div class="hud-tag top-left">VISION_SENSOR // 01</div>
+                                <div class="hud-tag bottom-left">FPS: 30.0 | RES: 640x480</div>
+                                <div class="hud-live-tag"><span class="pulse-red"></span> LIVE FEED</div>
+                            </div>
+                        </div>
+
+                        <!-- Webcam Controls -->
+                        <div class="webcam-controls-bar">
+                            <button id="btnStartCamera" class="btn-primary"><i class="fa-solid fa-camera"></i> Start Camera</button>
+                            <button id="btnCapturePhoto" class="btn-success" disabled><i class="fa-solid fa-bullseye"></i> Capture & Classify</button>
+                            <button id="btnToggleLiveInference" class="btn-secondary" disabled><i class="fa-solid fa-bolt"></i> Continuous Mode</button>
+                            <button id="btnStopCamera" class="btn-danger" disabled><i class="fa-solid fa-stop"></i> Stop</button>
+                        </div>
+                    </div>
+
+                    <!-- Real-time HUD Result Sidebar -->
+                    <div class="webcam-sidebar">
+                        <div class="hud-card">
+                            <h4><i class="fa-solid fa-satellite-dish"></i> Live Stream Prediction</h4>
+                            <div class="live-predict-result" id="livePredictBox">
+                                <div class="live-label" id="webcamLiveLabel">Camera Idle</div>
+                                <div class="live-conf" id="webcamLiveConf">-- %</div>
+                            </div>
+                        </div>
+
+                        <div class="snapshot-history">
+                            <h5><i class="fa-solid fa-clock-rotate-left"></i> Session Snapshots</h5>
+                            <div class="snapshots-strip" id="snapshotsStrip">
+                                <p class="empty-hint">Snapshots will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: Batch Analysis Studio -->
+            <section id="tab-batch" class="tab-pane">
+                <div class="glass-card batch-card">
+                    <div class="batch-header">
+                        <div>
+                            <h3><i class="fa-solid fa-layer-group"></i> Batch Image Classifier</h3>
+                            <p>Upload a folder or multiple images to run high-throughput parallel deep learning inference.</p>
+                        </div>
+                        <div class="batch-actions">
+                            <input type="file" id="batchFileInput" multiple accept="image/*" class="file-input-hidden">
+                            <button id="btnSelectBatch" class="btn-primary"><i class="fa-solid fa-folder-open"></i> Select Multiple Images</button>
+                            <button id="btnExportBatchCsv" class="btn-secondary" disabled><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                        </div>
+                    </div>
+
+                    <div class="batch-results-wrapper">
+                        <div id="batchEmpty" class="empty-state">
+                            <i class="fa-solid fa-images fa-3x"></i>
+                            <h4>No batch images selected</h4>
+                            <p>Click "Select Multiple Images" to classify an entire collection at once.</p>
+                        </div>
+                        <div id="batchLoading" class="loading-state hidden">
+                            <div class="cyber-spinner"></div>
+                            <h4>Processing batch inference...</h4>
+                        </div>
+                        <table class="custom-table hidden" id="batchTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Image File</th>
+                                    <th>Top Classification</th>
+                                    <th>Confidence</th>
+                                    <th>Inference Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: How Pretrained CNNs Work -->
+            <section id="tab-how-it-works" class="tab-pane">
+                <div class="glass-card educational-card">
+                    <div class="edu-header">
+                        <h2><i class="fa-solid fa-brain"></i> Understanding Pretrained Vision Models</h2>
+                        <p>How Convolutional Neural Networks (CNNs) & Transfer Learning identify visual patterns.</p>
+                    </div>
+
+                    <div class="edu-grid">
+                        
+                        <div class="edu-step-card">
+                            <div class="step-num">01</div>
+                            <h4>What is a Pretrained Model?</h4>
+                            <p>
+                                Training an AI vision model from zero requires millions of categorized images and weeks of GPU compute.
+                                A <strong>pretrained model</strong> (like MobileNetV2 or ResNet) has already learned visual representations on the <strong>ImageNet-1K</strong> dataset (1.4M images across 1,000 object categories).
+                            </p>
+                        </div>
+
+                        <div class="edu-step-card">
+                            <div class="step-num">02</div>
+                            <h4>Hierarchical Feature Learning</h4>
+                            <p>
+                                <strong>Early Layers:</strong> Detect raw edges, line orientations, and color transitions.<br>
+                                <strong>Middle Layers:</strong> Combine edges to detect shapes, curves, and textures (e.g. fur, wheels).<br>
+                                <strong>Deep Layers:</strong> Synthesize shapes into semantic objects (e.g. dog ears, eyes, car grilles).
+                            </p>
+                        </div>
+
+                        <div class="edu-step-card">
+                            <div class="step-num">03</div>
+                            <h4>Preprocessing Pipeline</h4>
+                            <p>
+                                Before entering the model, every image is:
+                                <br>1. Resized & Center-Cropped to <strong>224 × 224</strong>.
+                                <br>2. Converted to tensor values in range [0, 1].
+                                <br>3. Normalized with ImageNet mean `[0.485, 0.456, 0.406]` and std `[0.229, 0.224, 0.225]`.
+                            </p>
+                        </div>
+
+                        <div class="edu-step-card">
+                            <div class="step-num">04</div>
+                            <h4>Grad-CAM Explainability</h4>
+                            <p>
+                                <strong>Grad-CAM</strong> (Gradient-weighted Class Activation Mapping) calculates gradients of the predicted class with respect to the final convolutional feature maps.
+                                It creates a heat map showing the exact pixel regions that triggered the model's decision!
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- Model Comparison Matrix -->
+                    <div class="architecture-matrix">
+                        <h3>Model Architecture Comparison Matrix</h3>
+                        <table class="custom-table matrix-table">
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Parameters</th>
+                                    <th>Top-1 Accuracy</th>
+                                    <th>Latency (CPU)</th>
+                                    <th>Best Use-Case</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>MobileNetV2</strong></td>
+                                    <td>3.5 Million</td>
+                                    <td>71.9%</td>
+                                    <td>~15-30 ms</td>
+                                    <td>Edge devices, Mobile Apps, Real-time Camera</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ResNet-18</strong></td>
+                                    <td>11.7 Million</td>
+                                    <td>69.8%</td>
+                                    <td>~25-45 ms</td>
+                                    <td>Lightweight servers, Rapid prototyping</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>EfficientNet-B0</strong></td>
+                                    <td>5.3 Million</td>
+                                    <td>77.1%</td>
+                                    <td>~30-55 ms</td>
+                                    <td>State-of-the-art accuracy-to-size balance</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ResNet-50</strong></td>
+                                    <td>25.6 Million</td>
+                                    <td>76.1%</td>
+                                    <td>~60-110 ms</td>
+                                    <td>High-precision enterprise applications</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="footer-left">
+                <span>VisionLens AI Studio &bull; Built with PyTorch, Torchvision & FastAPI</span>
+            </div>
+            <div class="footer-right">
+                <a href="/docs" target="_blank" class="footer-link"><i class="fa-solid fa-book"></i> Interactive Swagger API</a>
+                <a href="/api/health" target="_blank" class="footer-link"><i class="fa-solid fa-heart-pulse"></i> API Health</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
